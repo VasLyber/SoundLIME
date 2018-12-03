@@ -54,10 +54,11 @@ class ModifiedBackprop(object):
     def __call__(self, x):
         # OpFromGraph is oblique to Theano optimizations, so we need to move
         # things to GPU ourselves if needed.
-        if theano.sandbox.cuda.cuda_enabled:
-            maybe_to_gpu = theano.sandbox.cuda.as_cuda_ndarray_variable
-        else:
-            maybe_to_gpu = lambda x: x
+        # TODO: make gpu optional
+        # if theano.sandbox.cuda.cuda_enabled:
+        #    maybe_to_gpu = theano.sandbox.cuda.as_cuda_ndarray_variable
+        # else:
+        maybe_to_gpu = lambda x: x
         # We move the input to GPU if needed.
         x = maybe_to_gpu(x)
         # We note the tensor type of the input variable to the nonlinearity
@@ -393,7 +394,7 @@ if __name__ == '__main__':
     for i in range(0, len(spectrum)):
         #print("Number of random excerpts selected from file %d are %d" %((i+1), num_exc[i]))
         # which excerpts are chosen per file can also be random. Here, its fixed to demonstrate for few examples
-        excerpt_index_random = np.array([100]) #np.random.randint(0, spectrum[i].shape[0], num_exc[i]) 
+        excerpt_index_random = np.random.randint(0, spectrum[i].shape[0], num_exc[i])
         #print(excerpt_index_random)
         for j in excerpt_index_random:
             list_excerpts.append(spectrum[i][j])
@@ -443,8 +444,7 @@ if __name__ == '__main__':
         plt.title('Pos. saliency (grd > 0.5)', fontsize=10)
         librosa.display.specshow(ss_d.T, sr = 22050, hop_length = 315, fmin=27.5, fmax=8000, y_axis = 'mel', x_axis='time', cmap = 'OrRd')    
         plt.tight_layout()
-        plt.savefig(os.path.join(options.dump_path,'analysis.eps'), format='eps', dpi=300)
-
+        plt.savefig(os.path.join(options.dump_path,'analysis' + str(excerpt_id).zfill(3) + '.eps'), format='eps', dpi=300)
 
     
             

@@ -22,7 +22,7 @@ except ImportError:
         return np.fft.rfft
 
 
-def read_ffmpeg(infile, sample_rate, cmd='/usr/local/bin/ffmpeg'):
+def read_ffmpeg(infile, sample_rate, cmd='ffmpeg'):
     """
     Decodes a given audio file using ffmpeg, resampled to a given sample rate,
     downmixed to mono, and converted to float32 samples. Returns a numpy array.
@@ -32,7 +32,7 @@ def read_ffmpeg(infile, sample_rate, cmd='/usr/local/bin/ffmpeg'):
     samples = subprocess.check_output(call)
     return np.frombuffer(samples, dtype=np.float32)
 
-def read_ffmpeg_partial(infile, sample_rate, offset, duration, cmd='/usr/local/bin/ffmpeg'):
+def read_ffmpeg_partial(infile, sample_rate, offset, duration, cmd='ffmpeg'):
     """
     Decodes a given audio file using ffmpeg, resampled to a given sample rate,
     downmixed to mono, and converted to float32 samples. Returns a numpy array.

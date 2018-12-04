@@ -9,7 +9,7 @@ import sys
 import os
 import numpy as np
 import librosa
-from lime import lime_text
+from slime import lime_text
 import utils as U
 from numpy import array
 import scipy.ndimage.filters

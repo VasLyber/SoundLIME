@@ -9,9 +9,9 @@ import numpy as np
 import sklearn
 import sklearn.preprocessing
 
-from lime.discretize import QuartileDiscretizer
-from lime.discretize import DecileDiscretizer
-from lime.discretize import EntropyDiscretizer
+from slime.discretize import QuartileDiscretizer
+from slime.discretize import DecileDiscretizer
+from slime.discretize import EntropyDiscretizer
 from . import explanation
 from . import lime_base
 

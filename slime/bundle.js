@@ -1,4 +1,4 @@
-var lime =
+var slime =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -187,7 +187,7 @@ var lime =
 	
 	
 	  Explanation.prototype.show_raw_tabular = function show_raw_tabular(exp, label, div) {
-	    div.classed('lime', true).classed('table_div', true);
+	    div.classed('slime', true).classed('table_div', true);
 	    var colors = ['#5F9EA0', this.colors_i(label)];
 	    if (this.names.length == 2) {
 	      colors = [this.colors_i(0), this.colors_i(1)];
@@ -259,7 +259,7 @@ var lime =
 	    var max_weight = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 1;
 	    var positions = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
 	
-	    div.classed('lime', true).classed('text_div', true);
+	    div.classed('slime', true).classed('text_div', true);
 	    div.append('h3').text('Text with highlighted words');
 	    var highlight_tag = 'span';
 	    var text_span = div.append('span').style('white-space', 'pre-wrap').text(raw_text);
@@ -35473,7 +35473,7 @@ var lime =
 	
 	
 	// module
-	exports.push([module.id, ".lime {\n  all: initial;\n}\n.lime.top_div {\n  display: flex;\n  flex-wrap: wrap;\n}\n.lime.predict_proba {\n  width: 245px;\n}\n.lime.explanation {\n  width: 350px;\n}\n\n.lime.text_div {\n  max-height:300px;\n  flex: 1 0 300px;\n  overflow:scroll;\n}\n.lime.table_div {\n  max-height:300px;\n  flex: 1 0 300px;\n  overflow:scroll;\n}\n.lime.table_div table {\n  border-collapse: collapse;\n  color: white;\n  border-style: hidden;\n  margin: 0 auto;\n}\n", ""]);
+	exports.push([module.id, ".slime {\n  all: initial;\n}\n.slime.top_div {\n  display: flex;\n  flex-wrap: wrap;\n}\n.slime.predict_proba {\n  width: 245px;\n}\n.slime.explanation {\n  width: 350px;\n}\n\n.slime.text_div {\n  max-height:300px;\n  flex: 1 0 300px;\n  overflow:scroll;\n}\n.slime.table_div {\n  max-height:300px;\n  flex: 1 0 300px;\n  overflow:scroll;\n}\n.slime.table_div table {\n  border-collapse: collapse;\n  color: white;\n  border-style: hidden;\n  margin: 0 auto;\n}\n", ""]);
 	
 	// exports
 

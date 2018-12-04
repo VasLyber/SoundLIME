@@ -35,7 +35,7 @@ from optparse import OptionParser
 import librosa
 import numpy.ma as ma
 import numpy.linalg as linalg
-from lime import lime_image
+from slime import lime_image
 lime_anal = True
 import time
 

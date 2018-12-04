@@ -180,25 +180,25 @@ class Explanation(object):
         <head><script>%s </script></head><body>''' % bundle
         random_id = id_generator()
         out += u'''
-        <div class="lime top_div" id="top_div%s"></div>
+        <div class="slime top_div" id="top_div%s"></div>
         ''' % random_id
         predict_proba_js = ''
         if predict_proba:
             predict_proba_js = u'''
             var pp_div = top_div.append('div')
-                                .classed('lime predict_proba', true);
+                                .classed('slime predict_proba', true);
             var pp_svg = pp_div.append('svg').style('width', '100%%');
-            var pp = new lime.PredictProba(pp_svg, %s, %s);
+            var pp = new slime.PredictProba(pp_svg, %s, %s);
             ''' % (jsonize(self.class_names),
                    jsonize(list(self.predict_proba.astype(float))))
 
         exp_js = '''var exp_div;
-            var exp = new lime.Explanation(%s);
+            var exp = new slime.Explanation(%s);
         ''' % (jsonize(self.class_names))
         for label in labels:
             exp = jsonize(self.as_list(label))
             exp_js += u'''
-            exp_div = top_div.append('div').classed('lime explanation', true);
+            exp_div = top_div.append('div').classed('slime explanation', true);
             exp.show(%s, %d, exp_div);
             ''' % (exp, label)
         raw_js = '''var raw_div = top_div.append('div');'''
@@ -206,7 +206,7 @@ class Explanation(object):
             self.local_exp[labels[0]], labels[0], 'raw_div', 'exp', **kwargs)
         out += u'''
         <script>
-        var top_div = d3.select('#top_div%s').classed('lime top_div', true);
+        var top_div = d3.select('#top_div%s').classed('slime top_div', true);
         %s
         %s
         %s

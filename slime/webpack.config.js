@@ -6,7 +6,7 @@ module.exports = {
     output: {
         path: __dirname,
         filename: 'bundle.js',
-        library: 'lime'
+        library: 'slime'
     },
     module: {
         loaders: [

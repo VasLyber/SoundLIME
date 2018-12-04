@@ -65,7 +65,7 @@ def read_testing_data(path_fv, path_gt_label, classifier_path):
 
     return (x_test, y_test, clf)
 
-def read_ffmpeg(infile, f_len, off, dur, sample_rate, cmd='/usr/local/bin/ffmpeg'):
+def read_ffmpeg(infile, f_len, off, dur, sample_rate, cmd='ffmpeg'):
     """
     Jan@ ISMIR 2015
     Decodes a given audio file using ffmpeg, resampled to a given sample rate,

@@ -167,8 +167,15 @@ class LimeImageExplainer(object):
         '''segments = quickshift(image, kernel_size=4,
                               max_dist=200, ratio=0.2)'''
         # SAUM
-        '''from skimage.segmentation import slic
-        segments = slic(image, n_segments= 24, compactness=1)'''
+        from skimage.segmentation import slic
+        segments = slic(image.astype(np.double), n_segments= 24, compactness=10)
+
+        from matplotlib import pyplot as plt
+        plt.imshow(segments)
+        plt.show()
+        plt.imshow(image)
+        plt.show()
+        '''
         segments = np.empty((image.shape[0], image.shape[1]))
         for i in range(0, image.shape[0]):
             if i <19:
@@ -180,32 +187,32 @@ class LimeImageExplainer(object):
                 segments[i][0:20] = 4
                 segments[i][20:40] = 5
                 segments[i][40:60] = 6
-                segments[i][60:80] = 7            
+                segments[i][60:80] = 7
             elif i>=38 and i<57:
                 segments[i][0:20] = 8
                 segments[i][20:40] = 9
                 segments[i][40:60] = 10
                 segments[i][60:80] = 11
-                
+
             elif i>=57 and i<76:
                 segments[i][0:20] = 12
                 segments[i][20:40] = 13
                 segments[i][40:60] = 14
                 segments[i][60:80] = 15
-                
+
             elif i>=76 and i<95:
                 segments[i][0:20] = 16
                 segments[i][20:40] = 17
                 segments[i][40:60] = 18
                 segments[i][60:80] = 19
-                
+
             else:
                 segments[i][0:20] = 20
                 segments[i][20:40] = 21
                 segments[i][40:60] = 22
                 segments[i][60:80] = 23
-                
-                
+
+        '''
         
         fudged_image = image.copy()
         if hide_color is None:
@@ -219,7 +226,7 @@ class LimeImageExplainer(object):
 
         data, labels = self.data_labels(image, fudged_image, segments,
                                         classifier_fn, num_samples,
-                                        batch_size=batch_size)
+                                        batch_size=1)
 
         #SAUM
         print("Label assigned via LIME path: %f" %(labels[0]))
@@ -250,7 +257,7 @@ class LimeImageExplainer(object):
                     segments,
                     classifier_fn,
                     num_samples,
-                    batch_size=10):
+                    batch_size=1):
         """Generates images and predictions in the neighborhood of this image.
 
         Args:

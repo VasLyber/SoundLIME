@@ -40,6 +40,7 @@ midlevel_dict = {
     5:'tonal stability',
     6:'minorness'
 }
+ml_names = ['melody','articulation','r_complexity','r_stability','dissonance','tonal stability','minorness']
 rState = np.random.RandomState(seed=0)
 torch.manual_seed(0)
 torch.cuda.manual_seed(0)
@@ -103,9 +104,10 @@ def prepare_audio(specpath):
     """
     x = SpecRegressionDataPool_noTargets([specpath], return_start_stop_times=True, seed=rState)
     # first dimension is 0 because we want the spectrum of a single audio (specpath is a single file)
-    spec_10sec = x[0][0][0]
-    file_list = x[0][1][0]
-    start_stop_times = x[0][2][0]
+    data = x[0]
+    spec_10sec = data[0][0]
+    file_list = data[1][0]
+    start_stop_times = data[2][0]
     return spec_10sec, start_stop_times
 
 
@@ -205,6 +207,9 @@ if __name__ == '__main__':
     print('Compiling CNN prediction function ....')
     prediction_fn_audio = compile_prediction_function_audio(modelfile)
 
+    ml, emo = prediction_fn_audio(np.array([spectrum]))
+    print(pd.DataFrame(ml, columns=ml_names).T)
+
     ############################LIME/SLIME-BASED ANALYSIS#############################
     # We know apply SLIME to the CNN model to generate time-frequency based explanations.
     list_exp = []
@@ -222,9 +227,3 @@ if __name__ == '__main__':
         plt.title(midlevel_dict[i])
         plt.show()
         pass
-
-
-
-
-
-

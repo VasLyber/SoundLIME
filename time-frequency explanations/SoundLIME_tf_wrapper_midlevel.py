@@ -133,7 +133,7 @@ def _predict_joint(model, device, test_data):
 
     return [pred_list_ml, pred_list_emo]
 
-
+'''
 def compile_prediction_function_audio(modelfile):
     """
     Compiles a function to compute the classification prediction
@@ -150,7 +150,24 @@ def compile_prediction_function_audio(modelfile):
     args = [model, device]
 
     return pred_func, args
+'''
 
+def compile_prediction_function_audio(modelfile):
+    """
+    Compiles a function to compute the classification prediction
+    for a given number of input excerpts.
+    """
+    # instantiate neural network
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = load_model(audio2mlemo_model,
+                       path=modelfile,
+                       device=device,
+                       num_targets=8)
+
+    def pred_func(x):
+        return _predict_joint(model, device, x)
+
+    return pred_func
 
 
 
@@ -160,7 +177,7 @@ if __name__ == '__main__':
     parser = opts_parser()
     options, args = parser.parse_args()
     if len(args) < 2:
-        parser.error("missing MODELFILE and/ or OUTPUT_FILE")
+        parser.error("missing MODELFILE and/ or SEED")
     (modelfile, seed) = args
     seed = int(seed)
     rState = np.random.RandomState(seed=seed)
@@ -170,7 +187,7 @@ if __name__ == '__main__':
 
     # Generate excerpts from input audio
     # returns a "list" of 3d arrays where each element has shape (no. of excerpts) x 115 x 80
-    spectrum, start_stop_times = prepare_audio('/home/shreyan/mounts/home@rk0/PROJECTS/midlevel/Soundtracks/set1/set1/mp3/spec/085.mp3.spec')
+    spectrum, start_stop_times = prepare_audio('/home/shreyan/mounts/home@rk0/PROJECTS/midlevel/Soundtracks/set1/set1/mp3/spec/045.mp3.spec')
 
     from skimage.segmentation import slic, felzenszwalb, mark_boundaries
 
@@ -186,7 +203,7 @@ if __name__ == '__main__':
 
     # compile the prediction function
     print('Compiling CNN prediction function ....')
-    prediction_fn_audio, pred_fn_args = compile_prediction_function_audio(modelfile)
+    prediction_fn_audio = compile_prediction_function_audio(modelfile)
 
     ############################LIME/SLIME-BASED ANALYSIS#############################
     # We know apply SLIME to the CNN model to generate time-frequency based explanations.
@@ -194,7 +211,7 @@ if __name__ == '__main__':
 
     print("\n------LIME based analysis-----")
     explainer = lime_image.LimeImageExplainer(verbose=True)
-    explanation, seg = explainer.explain_instance(image=spectrum, classifier_fn=prediction_fn_audio, fn_args=pred_fn_args, hide_color=0,
+    explanation, seg = explainer.explain_instance(image=spectrum, classifier_fn=prediction_fn_audio, hide_color=0,
                                                   top_labels=5, num_samples=2000, seed=rState)
 
     for i in range(7):

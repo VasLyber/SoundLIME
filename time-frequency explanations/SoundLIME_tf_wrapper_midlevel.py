@@ -31,6 +31,19 @@ lime_anal = True
 
 from imports_and_utils import *
 
+midlevel_dict = {
+    0:'melody',
+    1:'articulation',
+    2:'r_complexity',
+    3:'r_stability',
+    4:'dissonance',
+    5:'tonal stability',
+    6:'minorness'
+}
+rState = np.random.RandomState(seed=0)
+torch.manual_seed(0)
+torch.cuda.manual_seed(0)
+
 
 def opts_parser():
     usage = \
@@ -88,9 +101,12 @@ def prepare_audio(specpath):
     loads pre-prepared spectrogram
 
     """
-    spec10sec = SpecRegressionDataPool_noTargets([specpath])
-    return spec10sec[0][0][0]
-
+    x = SpecRegressionDataPool_noTargets([specpath], return_start_stop_times=True, seed=rState)
+    # first dimension is 0 because we want the spectrum of a single audio (specpath is a single file)
+    spec_10sec = x[0][0][0]
+    file_list = x[0][1][0]
+    start_stop_times = x[0][2][0]
+    return spec_10sec, start_stop_times
 
 
 def _predict_joint(model, device, test_data):
@@ -101,8 +117,8 @@ def _predict_joint(model, device, test_data):
     num_clips = test_data.shape[0]
 
     with torch.no_grad():
-        for clip_idx in trange(num_clips, ascii=True):
-            inputs, filenames = test_data[clip_idx:((clip_idx + 1))]
+        for clip_idx in range(num_clips):
+            inputs = test_data[clip_idx:((clip_idx + 1))]
             inputs = torch.Tensor(inputs).to(device)
 
             inputs = inputs.unsqueeze(1)
@@ -130,8 +146,10 @@ def compile_prediction_function_audio(modelfile):
                        device=device,
                        num_targets=8)
 
+    pred_func = _predict_joint
+    args = [model, device]
 
-    return model
+    return pred_func, args
 
 
 
@@ -142,34 +160,33 @@ if __name__ == '__main__':
     parser = opts_parser()
     options, args = parser.parse_args()
     if len(args) < 2:
-        parser.error("missing MODELFILE and/ or MEAN_STDFILE")
-    (modelfile, meanstd_file) = args
-
-    # default parameters from Jan Schluter et. al. paper @ ISMIR 2015
-    frame_len = 1024
-    nmels = 80
-    excerpt_size = 115  # equivalent to 1.6 sec
-
-    # dictionary of boolean flags to guide what needs to be the output file
-    # all initialised to false initially
-    # 'um' - unmasked, 'm'-masked, 'cm'- conditionally masked
-    flags = dict.fromkeys(['um', 'm', 'cm'], False)
-
-    if (options.transform == 'mel'):
-        input_dim = nmels
-    else:
-        input_dim = (frame_len / 2) + 1
+        parser.error("missing MODELFILE and/ or OUTPUT_FILE")
+    (modelfile, seed) = args
+    seed = int(seed)
+    rState = np.random.RandomState(seed=seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
 
 
     # Generate excerpts from input audio
     # returns a "list" of 3d arrays where each element has shape (no. of excerpts) x 115 x 80
-    spectrum = prepare_audio('/home/shreyan/mounts/home@rk0/PROJECTS/midlevel/Soundtracks/set1/set1/mp3/spec/001.mp3.spec')
+    spectrum, start_stop_times = prepare_audio('/home/shreyan/mounts/home@rk0/PROJECTS/midlevel/Soundtracks/set1/set1/mp3/spec/085.mp3.spec')
+
+    from skimage.segmentation import slic, felzenszwalb, mark_boundaries
+
+    segments = felzenszwalb(spectrum / np.max(np.abs(spectrum)), scale=25, min_size=40)
+    plt.imshow(np.rot90(mark_boundaries(spectrum / np.max(np.abs(spectrum)), segments, mode='subpixel')))
+    plt.title("Segments")
+    plt.show()
+    plt.imshow(np.rot90(spectrum))
+    plt.xticks(np.linspace(0,spectrum.shape[0], 5).astype(int), np.linspace(start_stop_times[0], start_stop_times[1], 5).round(1))
+    plt.show()
 
 
 
     # compile the prediction function
     print('Compiling CNN prediction function ....')
-    prediction_fn_audio = compile_prediction_function_audio(modelfile)
+    prediction_fn_audio, pred_fn_args = compile_prediction_function_audio(modelfile)
 
     ############################LIME/SLIME-BASED ANALYSIS#############################
     # We know apply SLIME to the CNN model to generate time-frequency based explanations.
@@ -177,12 +194,20 @@ if __name__ == '__main__':
 
     print("\n------LIME based analysis-----")
     explainer = lime_image.LimeImageExplainer(verbose=True)
-    explanation, seg = explainer.explain_instance(image=spectrum, classifier_fn=prediction_fn_audio, hide_color=0,
-                                                  top_labels=5, num_samples=2000)
-    temp, mask, fs = explanation.get_image_and_mask(0, positive_only=True, hide_rest=True, num_features=3)
-    print("Top-%d components in the explanation are: (%d, %d, %d)" % (3, fs[0][0], fs[0][1], fs[0][2]))
+    explanation, seg = explainer.explain_instance(image=spectrum, classifier_fn=prediction_fn_audio, fn_args=pred_fn_args, hide_color=0,
+                                                  top_labels=5, num_samples=2000, seed=rState)
 
-    list_exp.append(fs)  # if multiple explanations are generated for the same instance
+    for i in range(7):
+        temp, mask, fs = explanation.get_image_and_mask(i, positive_only=True, hide_rest=True, num_features=30)
+
+        plt.imshow(np.rot90(temp))
+        plt.xticks(np.linspace(0,spectrum.shape[0], 5).astype(int), np.linspace(start_stop_times[0], start_stop_times[1], 5).round(1))
+        plt.title(midlevel_dict[i])
+        plt.show()
+        pass
+
+
+
 
 
 

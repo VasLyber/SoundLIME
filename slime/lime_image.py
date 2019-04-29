@@ -135,7 +135,8 @@ class LimeImageExplainer(object):
                          hide_color=None,
                          top_labels=5, num_features=100000, num_samples=1000,
                          batch_size=10,
-                         distance_metric='cosine', model_regressor=None):
+                         distance_metric='cosine', model_regressor=None, seed=None,
+                         segments = None):
         """Generates explanations for a prediction.
 
         First, we generate neighborhood data by randomly perturbing features
@@ -163,56 +164,16 @@ class LimeImageExplainer(object):
             An Explanation object (see explanation.py) with the corresponding
             explanations.
         """
+
+
         from skimage.segmentation import quickshift
         '''segments = quickshift(image, kernel_size=4,
                               max_dist=200, ratio=0.2)'''
         # SAUM
-        from skimage.segmentation import slic
-        segments = slic(image.astype(np.double), n_segments= 24, compactness=10)
 
-        from matplotlib import pyplot as plt
-        plt.imshow(segments)
-        plt.show()
-        plt.imshow(image)
-        plt.show()
-        '''
-        segments = np.empty((image.shape[0], image.shape[1]))
-        for i in range(0, image.shape[0]):
-            if i <19:
-                segments[i][0:20]= 0
-                segments[i][20:40]= 1
-                segments[i][40:60]= 2
-                segments[i][60:80]= 3
-            elif i>=19 and i<38:
-                segments[i][0:20] = 4
-                segments[i][20:40] = 5
-                segments[i][40:60] = 6
-                segments[i][60:80] = 7
-            elif i>=38 and i<57:
-                segments[i][0:20] = 8
-                segments[i][20:40] = 9
-                segments[i][40:60] = 10
-                segments[i][60:80] = 11
-
-            elif i>=57 and i<76:
-                segments[i][0:20] = 12
-                segments[i][20:40] = 13
-                segments[i][40:60] = 14
-                segments[i][60:80] = 15
-
-            elif i>=76 and i<95:
-                segments[i][0:20] = 16
-                segments[i][20:40] = 17
-                segments[i][40:60] = 18
-                segments[i][60:80] = 19
-
-            else:
-                segments[i][0:20] = 20
-                segments[i][20:40] = 21
-                segments[i][40:60] = 22
-                segments[i][60:80] = 23
-
-        '''
+        if segments is None:
+            from skimage.segmentation import slic, felzenszwalb, mark_boundaries
+            segments = felzenszwalb(image/np.max(np.abs(image)), scale=25, min_size=40)
         
         fudged_image = image.copy()
         if hide_color is None:
@@ -226,10 +187,10 @@ class LimeImageExplainer(object):
 
         data, labels = self.data_labels(image, fudged_image, segments,
                                         classifier_fn, num_samples,
-                                        batch_size=1)
+                                        batch_size=1, seed=seed)
 
         #SAUM
-        print("Label assigned via LIME path: %f" %(labels[0]))
+        # print("Label assigned via LIME path: %f" %(labels[0]))
         distances = sklearn.metrics.pairwise_distances(
             data,
             data[0].reshape(1, -1),
@@ -237,16 +198,13 @@ class LimeImageExplainer(object):
         ).ravel()
 
         ret_exp = ImageExplanation(image, segments)
-        if top_labels:
-            top = np.argsort(labels[0])[-top_labels:]
-            ret_exp.top_labels = list(top)
-            ret_exp.top_labels.reverse()
-        for label in top:
-            (ret_exp.intercept[label],
-             ret_exp.local_exp[label],
+        num_ml_features = 7
+        for ml_feature in range(num_ml_features):
+            (ret_exp.intercept[ml_feature],
+             ret_exp.local_exp[ml_feature],
              ret_exp.score,         # SAUM added distance
-             ret_exp.distance[label]) = self.base.explain_instance_with_data(
-                data, labels, distances, label, num_features,
+             ret_exp.distance[ml_feature]) = self.base.explain_instance_with_data(
+                data, labels, distances, ml_feature, num_features,
                 model_regressor=model_regressor,
                 feature_selection=self.feature_selection)
         return ret_exp, segments    # SAUM added segments return
@@ -257,7 +215,7 @@ class LimeImageExplainer(object):
                     segments,
                     classifier_fn,
                     num_samples,
-                    batch_size=1):
+                    batch_size=1, seed=None):
         """Generates images and predictions in the neighborhood of this image.
 
         Args:
@@ -275,13 +233,16 @@ class LimeImageExplainer(object):
                 data: dense num_samples * num_superpixels
                 labels: prediction probabilities matrix
         """
+        from sklearn.utils import check_random_state
+        randState = check_random_state(seed)
         n_features = np.unique(segments).shape[0]
-        data = np.random.randint(0, 2, num_samples * n_features).reshape(
+        data = randState.randint(0, 2, num_samples * n_features).reshape(
                 (num_samples, n_features))
         labels = []
         data[0, :] = 1
         imgs = []
-        for row in data:
+        from tqdm import tqdm
+        for row in tqdm(data, desc="Running prediction for perturbed inputs"):
             temp = copy.deepcopy(image)
             zeros = np.where(row == 0)[0]
             mask = np.zeros(segments.shape).astype(bool)
@@ -290,10 +251,10 @@ class LimeImageExplainer(object):
             temp[mask] = fudged_image[mask]
             imgs.append(temp)
             if len(imgs) == batch_size:
-                preds = classifier_fn(np.array(imgs))
-                labels.extend(preds)
+                ml_preds, emo_preds = classifier_fn(np.array(imgs))
+                labels.append(ml_preds.squeeze())
                 imgs = []
         if len(imgs) > 0:
-            preds = classifier_fn(np.array(imgs))
-            labels.extend(preds)
+            ml_preds, emo_preds = classifier_fn(np.array(imgs))
+            labels.append(ml_preds.squeeze())
         return data, np.array(labels)
